@@ -8,7 +8,8 @@ export default new Vue({
   data: {
     token: '',
     axios: axios.create({
-      baseURL: 'https://myseu.cn/ws3/',
+      //baseURL: 'https://myseu.cn/ws3/',
+      baseURL:'http://localhost:3000',
       headers: { 'Content-Type': 'application/json' },
       validateStatus: () => true
     })
