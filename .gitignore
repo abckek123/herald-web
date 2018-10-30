@@ -9,6 +9,5 @@ out
 gen
 node_modules/
 package-lock.json
-yarn.lock
 dist
 dist-tmp
