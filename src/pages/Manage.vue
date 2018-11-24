@@ -1,194 +1,355 @@
-<template>
-    <div>
-        <div id='tab'>
-            <div class= 'tab-item' @click= "show=1">
-                我的teams
-                <hr v-show= 'show==1' style= "background-color: rgb(5, 66, 46);margin:0;padding: 0"/>
-            </div>
-            <div class= 'tab-item' @click= "show=2">
-                我的召集令
-                <hr v-show= 'show==2' style= "background-color: rgb(5, 66, 46);margin:0;padding: 0" />
-            </div>
-            <div class= 'tab-item' @click= "show=3">
-                我的申请
-                <hr v-show= 'show==3' style= "background-color: rgb(5, 66, 46);margin:0;padding: 0"/>
-            </div>
-        </div>
-        <div id= 'container'>
-            <!--如果已加入一些teams，则在这个容器里面将自己的teams循环渲染出来 -->
-            <div v-for= "team of myteams" class= 'my-team' v-if="show==1">
-                <div>
-                    <h4 class= 'team-project'> {{ team.publishedProj }} </h4>
-                    <div class= 'team-info'>
-                        <span>
-                            <span class= 'team-creator'>队长</span>
-                                {{ team.publisherName }}
-                        </span>
-                        <div class= 'team-members' style= "margin-top:3%">
-                            <span class= 'team-member'>组员</span>
-                            <span style= "color:rgba(182, 21, 9, 0.671)">{{ team.publisherName }}(队长)</span>
-                            <span v-for= "member of team.presentMembers">
-                                {{ member }}
-                            </span>
-                        </div> 
-                    </div>
-                </div>
-                <hr/>
-            </div>
-            <!--在这个容器里面展示我作为发布者发布召集令后收取到的入队申请消息，具体的内容时申请人填写的个人信息，
-            而且针对每一个申请人可以回复消息，另外可以在发布人看完申请人信息后可以一键将他加入team -->
-            <div v-for= "team of myteams" v-if= "show==2" style= "background-color: azure">
-                <div>
-                    <h4 class= 'team-project' style= "background-color: whitesmoke">{{ team.publishedProj }}</h4>
-                    <div class= 'team-info'>
-                        <span>
-                            <span class= 'team-creator'>发布人</span>
-                                {{ team.publisherName }}
-                            <span class= 'team-creator'>学号</span>
-                                {{ team.publisherStunum }}
-                            <span class= 'team-creator'>QQ</span>
-                                {{ team.publisherQQ }}
-                        </span>
-                        <div class= 'team-members' style="margin-top:3%">
-                            <span class= 'team-member'>组员人数</span>
-                            <span>
-                                {{ team.presentMembers.length+1 }}/{{ team.membersNum }}
-                            </span>
-                        </div> 
-                        <div style= "margin-top: 4%">
-                            <span class= 'publish-details'>召集令说明</span>
-                            <p>
-                             {{team.publishDetails}}
-                            </p>
-                        </div>
-                        <div v-if="applyToMe.length!==0" style="margin-top: 3%;">
-                            <span style= " 
-                                        color: rgba(182, 21, 9, 0.671);
-                                      padding: 2%;
-                                border-radius: 3px;"
-                           >申请记录</span>
-                            <span v-for= "applyItem of applyToMe" 
-                                   v-if= "applyItem.applyTo_WantID===team._id" 
-                                  style= "background-color:rgba(182, 26, 62, 0.644);
-                                                   padding: 2%;
-                                                     color: whitesmoke
-                                  "
-                                  @click= "looktheApply(applyItem._id)"
-                             >
-                                {{applyItem.applyFrom_UserName}}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <hr/>
-            </div>
-           <!--在这个容器里面是我作为申请人收取到发布人回复的内容-->
-           <div v-for= "( applywantItem, index ) of myapplys.applyWant" v-if= "show==3 " class= "myapply-item">
-            <div>
-                <div>
-                    <span style= "color: rgb(26, 43, 194)">申请项目</span>
-                    <span style= "color: rgb(194, 70, 21);font-size:  120%">{{ applywantItem.publishedProj }}</span>
-                </div>
-                <div>
-                        <span style= "color: rgb(26, 43, 194)">申请状态</span>
-                        <span style= "color: rgb(194, 70, 21)"
-                        v-if= "myapplys.apply[index].applyStatus !== 'success'">正在申请中……</span>
-                        <span style= "color: seagreen"
-                        v-if= "myapplys.apply[index].applyStatus === 'success'">申请通过^ _ ^</span>
-                </div>
-                <div class= "proj-details">
-                    <h3>项目详情</h3>
-                    <p>
-                        <div>
-                            <span style= "margin-left: 10%">项目竞赛类别</span>
-                            <span>{{ applywantItem.publishedProj }}</span>
-                            <div>
-                                <span style= "margin-left: 10%">项目负责人</span>
-                                <span>{{ applywantItem.publisherName }}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <span style= "margin-left: 10%">负责人QQ</span>
-                            <span>{{ applywantItem.publisherQQ }}</span>
-                        </div>
-                    </p>
-                </div>
-            </div>
-            <hr/>
-           </div>
-       </div>
-    </div>
+<template lang = "pug">
+    div 
+      ul#tab 
+          li(:class="{selected: show===1}",@click= "show=1") 我的发布
+          li(:class="{selected: show===2}",@click= "show=2") 我的申请
+          li(:class="{selected: show===3}",@click= "show=3") 接收申请
+      #remove-dialogue(v-if="isRemove_publish")
+          h3 是否删除此召集令？
+          button(@click="removePublish(id)",style="margin-left: 10%") 确认删除
+          button(@click="cancelremovePublish(id)",style="margin-left: 5%") 取消
+      #remove-dialogue(v-if="isRemove_apply")
+          h3 是否撤销此申请？
+          button(@click="removeApply(id)",style="margin-left: 10%") 确认撤销
+          button(@click="cancelremoveApply(id)",style="margin-left: 2%") 取消
+      #modify-pub(v-if="isModify_pub_start")
+          table 
+             tr
+               span 竞赛类别
+               input(v-model="modified_peojectName",style="width: 80%")
+             tr 
+               span 团队名称
+               input(v-model="modified_teamName",style="width: 80%")
+             tr(v-if='isModify_pub_start')
+               span 发起人qq
+               input(v-model="modified_qq",style="width: 80%")
+             tr(v-if='isModify_pub_start')
+               span 截止时间
+               input(type='date',v-model="modified_deadLine",style="width: 80%")
+             tr(v-if='isModify_pub_start')  
+               span 预期招人
+               input(v-model="modified_maxPeople",style="width: 80%")
+             tr 
+               p(v-if='isModify_pub_start')
+                 span  组队说明
+                 textarea(v-model="modified_description",style="width: 100%;margin-bottom:4%",rows="6") 
+             tr 
+               span(v-if="isModify_pub_start",
+                    style="background-color:rgba(230,249,253);padding: 3%;margin-left: 4%",
+                    @click="cancelmodifyPublish(tid)") 取消修改 
+               span(v-if="isModify_pub_start", 
+                    style="background-color:rgba(230,249,253);padding: 3%;margin-left: 4%",
+                    @click="submitModify_pub(id)") 修改完成    
+          
+      #modify-apply(v-if="isModify_apply_start") 
+          table 
+             tr 
+               span qq
+               input(v-model="modified_qq_apply",style="width:60%")
+             tr 
+               span 个人简述
+               textarea(v-model="modified_description_apply",style="width:100%")     
+          div(style="margin: 3% 5% 2% 15%")
+             span(style="background-color:rgba(230,249,253);padding: 3%",
+                  @click="cancelmodifyApply(id)",
+                   v-if="isModify_apply_start") 取消修改
+             span(style="background-color:rgba(230,249,253);padding: 3%;margin-left: 3%;width:7%", 
+                  @click="submitmodifyApply(id)",
+                  v-if="isModify_apply_start") 完成修改
+             
+      #container 
+        div.my-publish(v-for= "mypublishItem of mypublish",v-if="show==1")
+            span {{mypublishItem.status===4?"已弃置":"正常"}}
+            table 
+              tr 
+                td.block 
+                   tr.key 竞赛类别
+                   tr.value {{ mypublishItem.projectName }}
+                td.block 
+                   tr.key 团队名
+                   tr.value {{mypublishItem.teamName}}
+              tr 
+                td.block 
+                   tr.key 发起人及组员
+                   tr.value {{ mypublishItem.masterName }}（发起人）
+                   tr.value(v-for="one of mypublishItem.currentPeople", 
+                            v-if="one.name!==mypublishItem.masterName") {{ one.name }}
+                td.block 
+                   tr.key 发起人qq
+                   tr.value {{ mypublishItem.qq }}
+              tr 
+                table 
+                   td.block 
+                       tr.key 发布时间
+                       tr.value {{publishedData_unixTOnormal(mypublishItem.publishedDate)}}
+                   td.block 
+                       tr.key 截止时间
+                       tr.value {{publishedData_unixTOnormal(mypublishItem.deadLine)}}
+                td.block 
+                   tr.key 预期招人
+                   tr.value {{mypublishItem.maxPeople}}
+            #description
+                .key 组队说明
+                p.value {{mypublishItem.description}}
+                div(style="margin: 5% 20% 5% 27%")
+                  span(v-if="!isModify_pub_inished && !isModify_pub_start",
+                      style="background-color:rgba(230,249,253);padding: 3%;margin-left: 4%", 
+                      @click="WillmodifyPub(mypublishItem.tid)") 修改
+                  span(v-if="!isModify_pub_start",
+                       style="background-color:rgba(230,249,253);padding: 3%;margin-left: 4%",
+                       @click="willremovePub(mypublishItem.tid)") 删除
+        hr 
+        div(v-for= "myapplyItem of myapplys", 
+            v-if= "show==2",  
+            :class="[{applypass: myapplyItem.status===1},{appplyreject: myapplyItem.status===2}]")
+            table 
+                tr 
+                  td.block 
+                    tr.key 申请竞赛类
+                    tr.value {{ myapplyItem.projectName }}
+                  td.block 
+                    tr.key 团队名
+                    tr.value {{myapplyItem.teamName}}
+                tr 
+                  td.block 
+                    tr.key 发起时间
+                    tr.value {{publishedData_unixTOnormal(myapplyItem.updateDate)}}
+                  td.block 
+                    tr.key 申请时间
+                    tr.value {{publishedData_unixTOnormal(myapplyItem.applicationDate)}}
+                tr 
+                  table   
+                    td.block 
+                        span.key 个人简述
+                        p.value {{myapplyItem.description}}
+                    td.block 
+                        tr.key 我的qq
+                        tr.value {{myapplyItem.qq}}
+                  td.block 
+                    tr.key 申请状态
+                    tr.value {{myapplyItem.status===0 ? '申请当中' : myapplyItem.status===1 ? '申请成功' :myapplyItem.status===2 ? '申请被拒绝' :null}}
+                tr 
+                  td.block 
+                    span 团队详情
+                    span {{myapplyItem.status===4?"此团队已经弃置，建议撤销申请":null}}
+                  td.block 
+                    tr.key 通过或拒绝的理由
+                    tr.value {{myapplyItem.responseText}}
+            div(style="margin: 5% 20% 5% 36%",v-if="myapplyItem.status===0")
+                span(style="background-color:rgba(230,249,253);padding: 3%", 
+                     @click="WillmodifyApply(myapplyItem.rid)") 修改
+                span(style="background-color:rgba(230,249,253);padding: 3%",@click="WillremoveAppl(myapplyItem.rid)") 撤销
+            hr 
+        div.applyToMe-item(v-for= "applyTomeItem of applyToMe",v-if= "show==3 ")
+            table 
+                tr 
+                  td.block 
+                    tr.key 申请人
+                    tr.value {{applyTomeItem.applicant}}
+                    span 申请于{{publishedData_unixTOnormal(applyTomeItem.applicationDate)}}
+                  td.block 
+                    tr.key 申请人QQ
+                    tr.value {{applyTomeItem.qq}}
+                tr
+                  td.block 
+                    tr.key 申请项目
+                    tr.value {{applyTomeItem.projectName}}（发布于{{publishedData_unixTOnormal(applyTomeItem.applicationDate)}}）
+                  td.block 
+                    tr.key 个人简述
+                    tr.value {{applyTomeItem.description}}
+            p 
+              div.key 申请处理
+              div.value 
+                div(v-if="applyTomeItem.status===1") 已经给予通过
+                div(v-else-if="applyTomeItem.status===2") 已经给予拒绝
+                div(v-else)
+                    div 
+                      textarea(v-model="text",style="width: 80%",placeholder="填写通过或拒绝的理由 (选填)")
+                    div(style="margin-top: 5%")
+                      button(style="margin-left: 10%",@click="pass(applyTomeItem.rid,text)") 给予通过
+                      button(style="margin-left: 10%",@click="reject(applyTomeItem.rid,text)") 给予拒绝
+        
 </template>
 <script>
-    import axios from 'axios';
-    import io from 'socket.io-client';
+    import api from '@/api';
+    import Vue from 'vue';
+    
+    export default {
 
-    let socket = io('ws://localhost:9093');
-export default {
-    props: [ 'user' ],
-    created() {
-        this.getapplyToMe();   // 获取所有申请我的召集令的申请信息（我是发布者）
-        this.getmywant();      // 获取我的发布的过的所有召集令   （我是发布者）
-        this.getmyapply();     // 获取我向其他发布者发出的申请信息（我是申请者）
-    },
-    methods: {
-        getapplyToMe() {
-            axios.post( 'http://localhost:9093/user/getapplytome', { applyTo: this.user.name } )
-            .then( res => {
-                if( res.status === 200 && res.data.code === 0 ) {
-                    this.applyToMe = res.data.data;
-                    console.log( '向我申请的：', this.applyToMe )
+        props: [ 'user' ],
+        data() {
+            return {
+                         show : 1,        // 默认渲染“我的teams”
+                    mypublish : [],       // 保存后端查询返回的团队信息（并没有独立的团队信息数据库，而是从召集令中提取）主要是团队成员变化都会变化在召集令的数据库里
+                     myapplys : [],       // 保存后端返回的我向别人的申请信息
+                    applyToMe : [],       // 保存后端返回的别人向我的申请信息
+                         page : 1,
+                         text : '',
+             isModify_publish : false,    // 是否提出修改发布的召集令
+               isModify_apply : false,    //是否提出修改申请
+             isRemove_publish : false,    
+               isRemove_apply : false,
+                         hard : false,     //是否从数据库删除
+                           id : '',        //要删除或者的召集令和申请的id
+           isModify_pub_start : false,
+        isModify_pub_finished : false,
+         isModify_apply_start : false,
+      isModify_apply_finished : false,
+                    ///////////用于修改召集令时的中间字段
+            modified_deadLine : '',
+           modified_maxPeople : '',
+         modified_peojectName : '',
+                  modified_qq : '',
+            modified_teamName : '',
+         modified_description : '',
+                   //////////用于修改申请时的中间字段
+   modified_description_apply : '',
+            modified_qq_apply : ''
                 }
-            });
-            socket.on( 'recapply', function( data ){
-                [ this.applyToMe ].push( data );
-                console.log( '申请：', this.applyToMe)
-            });
-        },
-        getmywant() {
-            axios.post( 'http://localhost:9093/user/getmywant', { publisherName: this.user.name } )
-            .then( res => {
-                console.log('获取我的want详情:',res.data.data);
-                this.myteams = res.data.data;
-            })
-        },
-        looktheApply(applyID) {
-            console.log(applyID)
-            this.$router.push( {name: '入队申请', params: { applyid: applyID}})
-        },
-        getmyapply() {
-            axios.post( "http://localhost:9093/user/getmyapply", { applyFrom: this.user.name} )
-            .then( res => {
-                if( res.status === 200 && res.data.code === 0 ){
-                    console.log( '我的申请',res.data.data);
-                    this.myapplys= res.data.data;
+       },
+       created() {
+           this.getMy_published_apply();   
+       },
+       methods: {
+            async getMy_published_apply() {
+                console.log('正在请求type=2')
+                let res = await api.get('/api/team', {type:2, page:this.page});
+                let {published, requested, received} = res;
+                console.log('published',published)
+                console.log('requested',requested)
+                console.log('received',received)
+                this.mypublish = published; //published, 我发布的项目
+                this.myapplys = requested;  //requested, 我提交的申请
+                this.applyToMe = received;  //received,  我收到的申请
+            },   
+            async pass(rid,text='没有填写理由'){
+                let res = await api.post("/api/team/reply",{rid:rid,text:text,response:true})
+                console.log(res.status)
+                if(res.status===0){
+                    Vue.toasted.show('已通过')
                 }
-            })
-        },
-        
+            },
+            async reject(rid,text='没有填写理由'){
+                let res = await api.post("/api/team/reply",{rid:rid,text:text,response:false})
+                console.log(res.status)
+                if(res.status===0){
+                    Vue.toasted.show('已拒绝')
+                }
+            },
+            publishedData_unixTOnormal(unixtime){
+                if(typeof(unixtime)==='string')return unixtime;
+                let unixTimestamp = new Date(unixtime * 1000);
+                let Y = unixTimestamp.getFullYear();
+                let M = ((unixTimestamp.getMonth() + 1) > 10 ? 
+                         (unixTimestamp.getMonth() + 1) : '0' + (unixTimestamp.getMonth() + 1));
+                let D = (unixTimestamp.getDate() > 10 ? 
+                         unixTimestamp.getDate() : '0' + unixTimestamp.getDate());
+                let toDay = Y + '-' + M + '-' + D;
+                return  toDay;
+            },
+
+            willremovePub(tid){
+                this.isRemove_publish = true;
+                this.id = tid;
+            },
+            WillremoveAppl(rid){
+                this.isRemove_apply = true;
+                this.id = rid;
+            },
+            WillmodifyPub(tid){
+                this.isModify_pub_start = true
+                this.id = tid;
+            },
+            WillmodifyApply(rid){
+                this.isModify_apply_start = true;
+                this.id = rid;
+            },
+            cancelremovePublish(tid){
+                this.isRemove_publish = false;
+                this.isModify_pub_start = false
+            },
+            cancelremoveApply(tid){
+                this.isRemove_apply = false
+            },
+            cancelmodifyPublish(tid){
+                this.isModify_pub_start = false
+            },
+            cancelmodifyApply(rid){
+                this.isModify_apply_start = false
+            },
+            async removePublish(id,hard){   //删除召集令
+                let res = await api.delete('/api/team', {tid:id,hard:true});
+                if(res.status===0){
+                    Vue.toasted.show('删除成功');
+                    this.isRemove_publish = false
+                };
+                this.getMy_published_apply()
+            },
+            async removeApply(id,hard){   //撤销申请
+                let res = await api.delete('/api/team/registration', {rid: id, hard:true});
+                if(res.status===0){
+                    Vue.toasted.show('撤销成功');
+                    this.isRemove_apply = false
+                };
+                this.getMy_published_apply()
+            },
+            async submitModify_pub(tid){
+                let putData = {
+                            tid,
+                             qq : this.modified_qq,
+                       teamName : this.modified_teamName,
+                    projectName : this.modified_peojectName,
+                      maxPeople : this.modified_maxPeople,
+                       deadLine : this.modified_deadLine ,
+                    description : this.modified_description
+                }
+                if( this.modified_qq && 
+                    this.modified_teamName && 
+                    this.modified_peojectName && 
+                    this.modified_maxPeople && 
+                    this.modified_deadLine &&
+                    this.modified_description){
+                        let res = await api.put('/api/team',putData);
+                        if(res.status===0){
+                        }
+                    this.getMy_published_apply();
+                    this.isModify_pub_start = false
+                    }else{
+                   Vue.toasted.show('请填写完整')
+                    }
+            },
+            async submitmodifyApply(rid){
+                let putData = {
+                              rid,
+                              qq : this.modified_qq_apply,
+                     description : this.modified_description_apply
+                };
+                if(this.modified_qq_apply && this.modified_description_apply){
+                    let res = await api.put('/api/team/registration', putData);
+                    if(res.status===0){
+                        Vue.toasted.show('修改申请成功')
+                    }
+                    this.getMy_published_apply();
+                    this.isModify_apply_start = false
+                }else{
+                Vue.toasted.show('请填写完整')
+                }
+            }
     },
-    data() {
-        return {
-               show : 1,        // 默认渲染“我的teams”
-            myteams : [],       // 保存后端查询返回的团队信息（并没有独立的团队信息数据库，而是从召集令中提取）主要是团队成员变化都会变化在召集令的数据库里
-           myapplys : [],       // 保存后端返回的我向别人的申请信息
-          applyToMe : [],       // 保存后端返回的别人向我的申请信息
-           
-        }
-    }
 }
 </script>
 <style scoped>
 #tab{
-    background-color: rgb(170, 216, 219);
-    width:100%;
+     width:100%;
 }
-.tab-item{
-    display: inline-block;
-    margin: 0;
-    text-align: center;
-    padding: 1% 7% 1% 7%;
-    color:rgba(79,122,125);
+#tab li{
+    display:inline-block;
+    padding: 1% 2% 1% 2%;
+    margin-left: 7%
+}
+#tab .selected{
+    background-color: rgba(226,250,254);
+    color:rgba(74,131,141)
 }
 h4{
     text-align: center;
@@ -236,4 +397,65 @@ h4{
     color: crimson;
     
 }
+table{   
+    width:100%;
+    }
+   .block{
+       background-color: rgba(226,250,254);
+       color:#437e88;
+       padding-left: 3%
+   }
+   .key{
+       color: rgb(154, 168, 180);
+       padding-left: 3%
+   }
+   .value{
+       color: rgba(67,126,136);
+       font-size: 110%;
+       padding-left: 20%
+   }
+   #description{
+       background-color: rgba(226,250,254);
+       padding-right: 3%;
+       margin: 0
+   }
+   .applypass{
+       background-color: rgb(49, 187, 84)
+   }
+   .appplyreject{
+       background-color: coral
+   }
+   #remove-dialogue{
+    position: fixed;
+    z-index: 12;
+    top:10%;
+    left:14%;
+    color:brown;
+    font-size: 110%;
+    background-color: rgba(27, 118, 134, 0.558);
+    border-radius: 5px;
+    padding: 6%;
+    margin-left: 10%;
+    padding-bottom: 1%
+
+   }
+   #modify-pub{
+    position: fixed;
+    z-index: 12;
+    top:2%;
+    left:14%;
+    color:brown;
+    padding: 2% 5% 3% 5%;
+    background-color: rgba(138, 170, 170, 0.596)
+   }
+   #modify-apply{
+    position: fixed;
+    z-index: 12;
+    top:2%;
+    left:14%;
+    color:brown;
+    padding: 2% 5% 3% 5%;
+    background-color: rgba(138, 170, 170, 0.596)
+   }
+
 </style>

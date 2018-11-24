@@ -14,6 +14,8 @@ export default new Vue({
       validateStatus: () => true
     })
   },
+  //http://localhost:3000/
+  //https://myseu.cn/ws3/
   created() {
     this.axios.defaults.headers.token = this.token = cookie.get('herald-default-token')
     // 更新 token 失效时间
@@ -38,6 +40,7 @@ export default new Vue({
       return this.handleResponse(await this.axios.get(route + params))
     },
     async post(route = '/', data = {}) {
+      console.log('post数据:',data)
       return this.handleResponse(await this.axios.post(route, data))
     },
     async put(route = '/', data = {}) {
